@@ -3,11 +3,9 @@ package sqlbuilder;
 import sqlbuilder.dialects.SqlDialect;
 import sqlbuilder.exceptions.ValueCannotBeEmptyException;
 import sqlbuilder.expressions.Condition;
+import sqlbuilder.expressions.Expression;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class SelectBuilder {
     private final SqlDialect DIALECT;
@@ -72,6 +70,11 @@ public class SelectBuilder {
         return this;
     }
 
+    public SelectBuilder join(String table, Condition joinCondition) {
+        //TODO: implement join
+        return this;
+    }
+
     /**
      * Define conditions to limit the query result.
      * When called multiple times the conditions are chained together using an AND.
@@ -124,7 +127,8 @@ public class SelectBuilder {
 
         if(!conditions.isEmpty()) {
             statement.add("WHERE");
-            conditions.forEach(condition -> statement.add(condition.toSql()));
+
+            statement.add(new Condition.CompositeCondition("AND", conditions).toSql());
         }
 
         return new Query(statement.toString());

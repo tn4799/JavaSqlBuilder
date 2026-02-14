@@ -54,6 +54,39 @@ public interface Condition {
             return new CompositeCondition(chainingOperator, leftCondition, Expression.like(column, value));
         }
     }
+
+    class CompositeCondition implements Condition {
+        private String type;
+        private List<Condition> conditions;
+
+        public CompositeCondition(String type, Condition... conditions) {
+            this.type = type;
+            this.conditions = List.of(conditions);
+        }
+
+        public CompositeCondition(String type, List<Condition> conditions) {
+            this.type = type;
+            this.conditions = conditions;
+        }
+
+        @Override
+        public String toSql() {
+            if(conditions.isEmpty()) {
+                return "";
+            }
+
+            return conditions.stream()
+                    .map(Condition::toSql)
+                    .collect(Collectors.joining(" " + type + " "));
+        }
+
+        @Override
+        public List<Object> getParameters() {
+            return conditions.stream()
+                    .flatMap(condition -> condition.getParameters().stream())
+                    .toList();
+        }
+    }
 }
 
 class ComparisionCondition implements Condition {
@@ -134,33 +167,5 @@ class SimpleCondition implements Condition {
     @Override
     public List<Object> getParameters() {
         return Collections.singletonList(comparisonValue);
-    }
-}
-
-class CompositeCondition implements Condition {
-    private String type;
-    private List<Condition> conditions;
-
-    public CompositeCondition(String type, Condition... conditions) {
-        this.type = type;
-        this.conditions = List.of(conditions);
-    }
-
-    @Override
-    public String toSql() {
-        if(conditions.isEmpty()) {
-            return "";
-        }
-
-        return conditions.stream()
-                .map(Condition::toSql)
-                .collect(Collectors.joining(" " + type + " "));
-    }
-
-    @Override
-    public List<Object> getParameters() {
-        return conditions.stream()
-                .flatMap(condition -> condition.getParameters().stream())
-                .toList();
     }
 }
