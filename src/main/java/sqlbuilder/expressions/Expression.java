@@ -51,6 +51,14 @@ public class Expression {
         return new ComparisionCondition(left, "LIKE", right);
     }
 
+    public static Condition isNull(String column) {
+        return new NullCondition(column);
+    }
+
+    public static Condition isNotNull(String column) {
+        return new NotNullCondition(column);
+    }
+
     public static Condition brackets(Condition expression) {
         //TODO: Implement bracket support
         return null;

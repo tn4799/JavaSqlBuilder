@@ -82,6 +82,35 @@ class ComparisionCondition implements Condition {
     }
 }
 
+class NullCondition implements Condition {
+    protected final String column;
+
+    public NullCondition(String column) {
+        this.column = column;
+    }
+
+    @Override
+    public String toSql() {
+        return column + " IS NULL";
+    }
+
+    @Override
+    public List<Object> getParameters() {
+        return List.of();
+    }
+}
+
+class NotNullCondition extends NullCondition {
+    public NotNullCondition(String column) {
+        super(column);
+    }
+
+    @Override
+    public String toSql() {
+        return column + "IS NOT NULL";
+    }
+}
+
 class SimpleCondition implements Condition {
     private final String column;
     private final String comparisonOperator;
