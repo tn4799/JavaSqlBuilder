@@ -8,6 +8,7 @@ import sqlbuilder.expressions.Expression;
 import java.util.*;
 
 public class SelectBuilder {
+    public static final String ERROR_MESSAGE_MULTIPLE_ORDER_DIRECTION_CALLS = "order direction can only be set once. Multiple calls of desc() or asc() are not allowed!";
     private final SqlDialect DIALECT;
     private final String SCHEMA;
 
@@ -16,6 +17,9 @@ public class SelectBuilder {
     private final Set<String> tablesContext = new HashSet<>();
     private final List<String> joins = new ArrayList<>();
     private final List<Condition> conditions = new ArrayList<>();
+    private final List<String> groupColumns = new ArrayList<>();
+    private final List<String> orderColumns = new ArrayList<>();
+    private String orderDirection = null;
 
     private int limit = -1;
     private int offset = 0;
@@ -73,9 +77,9 @@ public class SelectBuilder {
 
     public SelectBuilder join(String table, Condition joinCondition) {
         tablesContext.add(table);
+        table = this.DIALECT.formatTableIdentifier(table, tablesContext);
         StringJoiner join = new StringJoiner(" ")
                 .add("JOIN");
-        table = this.DIALECT.formatTableIdentifier(table, tablesContext);
         join.add(table)
                 .add("ON")
                 .add(joinCondition.toSql());
@@ -88,7 +92,6 @@ public class SelectBuilder {
         tablesContext.add(table);
         StringJoiner join = new StringJoiner(" ")
                 .add("JOIN");
-        table = this.DIALECT.formatTableIdentifier(table, tablesContext);
         join.add(table)
                 .add(alias)
                 .add("ON")
@@ -110,6 +113,29 @@ public class SelectBuilder {
         }
 
         conditions.add(condition);
+        return this;
+    }
+
+    public SelectBuilder orderBy(String... columns) {
+        orderColumns.addAll(List.of(columns));
+        return this;
+    }
+
+    public SelectBuilder desc() {
+        if(orderDirection != null) {
+            throw new IllegalStateException(ERROR_MESSAGE_MULTIPLE_ORDER_DIRECTION_CALLS);
+        }
+
+        orderDirection = "DESC";
+        return this;
+    }
+
+    public SelectBuilder asc() {
+        if(orderDirection != null) {
+            throw new IllegalStateException(ERROR_MESSAGE_MULTIPLE_ORDER_DIRECTION_CALLS);
+        }
+
+        orderDirection = "ASC";
         return this;
     }
 
@@ -148,10 +174,20 @@ public class SelectBuilder {
                 .add("FROM")
                 .add(String.join(", ", tables));
 
+        joins.forEach(statement::add);
+
         if(!conditions.isEmpty()) {
             statement.add("WHERE");
 
             statement.add(new Condition.CompositeCondition("AND", conditions).toSql());
+        }
+
+        if(!orderColumns.isEmpty()) {
+            if(orderDirection == null) {
+                orderDirection = "DESC";
+            }
+
+            statement.add("ORDER BY").add(String.join(", ", orderColumns)).add(orderDirection);
         }
 
         return new Query(statement.toString());
