@@ -58,7 +58,7 @@ builder.selectDistinct("role").from("users");
 ```
 
 ### 3. Komplexe Where-Klauseln
-Nutzen Sie die `Expression`-Utility, um Bedingungen zu erstellen. Bedingungen können mit `.and()` oder `.or()` verkettet werden. Sie können auch auf `NULL`-Werte prüfen.
+Nutzen Sie die `Expression`-Utility, um Bedingungen zu erstellen. Bedingungen können mit `.and()` oder `.or()` verkettet werden.
 
 ```java
 import sqlbuilder.expressions.Expression;
@@ -72,6 +72,17 @@ builder.select("name")
 // Null-Prüfungen:
 builder.where(Expression.isNull("deleted_at"))
        .where(Expression.isNotNull("email"));
+
+// IN-Bedingungen:
+builder.where(Expression.in("status", "active", "pending"));
+
+// Subqueries mit IN und EXISTS:
+SelectBuilder subQuery = new SelectBuilder(dialect).select("id").from("active_users");
+builder.where(Expression.in("user_id", subQuery));
+builder.where(Expression.exists(subQuery));
+
+// Negierung:
+builder.where(Expression.not(Expression.eq("deleted", true)));
 ```
 
 ### 4. Joins
