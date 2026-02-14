@@ -1,5 +1,9 @@
 package sqlbuilder.expressions;
 
+import sqlbuilder.SelectBuilder;
+
+import java.util.List;
+
 public class Expression {
     public static Operand column(String columnName) {
         return new ColumnOperand(columnName);
@@ -73,6 +77,42 @@ public class Expression {
 
     public static Condition isNotNull(String column) {
         return new NotNullCondition(column);
+    }
+
+    public static Condition not(Condition condition) {
+        return new NotCondition(condition);
+    }
+
+    public static Condition in(String column, List<Object> values) {
+        return new InCondition(column, values);
+    }
+
+    public static Condition in(String column, Object... values) {
+        return in(column, List.of(values));
+    }
+
+    public static Condition in(String column, SelectBuilder subQuery) {
+        return new InCondition(column, subQuery);
+    }
+
+    public static Condition notIn(String column, List<Object> values) {
+        return new NotInCondition(column, values);
+    }
+
+    public static Condition notIn(String column, Object... values) {
+        return notIn(column, List.of(values));
+    }
+
+    public static Condition notIn(String column, SelectBuilder subQuery) {
+        return new NotInCondition(column, subQuery);
+    }
+
+    public static Condition exists(SelectBuilder subQuery) {
+        return new ExistsCondition(subQuery);
+    }
+
+    public static Condition notExists(SelectBuilder subQuery) {
+        return new NotExistsCondition(subQuery);
     }
 
     public static Condition brackets(Condition expression) {

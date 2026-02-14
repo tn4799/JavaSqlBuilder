@@ -1,5 +1,9 @@
 package sqlbuilder.expressions;
 
+import sqlbuilder.SelectBuilder;
+import sqlbuilder.exceptions.ValueCannotBeEmptyException;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
@@ -27,37 +31,81 @@ public interface Condition {
         }
 
         public Condition eq(String column, Object value) {
-            return new CompositeCondition(chainingOperator, leftCondition, Expression.eq(column, value));
+            return createCompositeCondition(Expression.eq(column, value));
         }
 
         public Condition neq(String column, Object value) {
-            return new CompositeCondition(chainingOperator, leftCondition, Expression.neq(column, value));
+            return createCompositeCondition(Expression.neq(column, value));
         }
 
         public Condition lt(String column, Object value) {
-            return new CompositeCondition(chainingOperator, leftCondition, Expression.lt(column, value));
+            return createCompositeCondition(Expression.lt(column, value));
         }
 
         public Condition leq(String column, Object value) {
-            return new CompositeCondition(chainingOperator, leftCondition, Expression.leq(column, value));
+            return createCompositeCondition(Expression.leq(column, value));
         }
 
         public Condition gt(String column, Object value) {
-            return new CompositeCondition(chainingOperator, leftCondition, Expression.gt(column, value));
+            return createCompositeCondition(Expression.gt(column, value));
         }
 
         public Condition geq(String column, Object value) {
-            return new CompositeCondition(chainingOperator, leftCondition, Expression.geq(column, value));
+            return createCompositeCondition(Expression.geq(column, value));
         }
 
         public Condition like(String column, Object value) {
-            return new CompositeCondition(chainingOperator, leftCondition, Expression.like(column, value));
+            return createCompositeCondition(Expression.like(column, value));
+        }
+
+        public Condition isNull(String column) {
+            return createCompositeCondition(Expression.isNull(column));
+        }
+
+        public Condition not(Condition condition) {
+            return createCompositeCondition(Expression.not(condition));
+        }
+
+        public Condition in(String column, List<Object> values) {
+            return createCompositeCondition(Expression.in(column, values));
+        }
+
+        public Condition in(String column, Object... values) {
+            return in(column, List.of(values));
+        }
+
+        public Condition in(String column, SelectBuilder subQuery) {
+            return createCompositeCondition(Expression.in(column, subQuery));
+        }
+
+        public Condition notIn(String column, List<Object> values) {
+            return createCompositeCondition(Expression.notIn(column, values));
+        }
+
+        public Condition notIn(String column, Object... values) {
+            return notIn(column, List.of(values));
+        }
+
+        public Condition notIn(String column, SelectBuilder subQuery) {
+            return createCompositeCondition(Expression.notIn(column, subQuery));
+        }
+
+        public Condition exists(SelectBuilder subQuery) {
+            return createCompositeCondition(Expression.exists(subQuery));
+        }
+
+        public Condition notExists(SelectBuilder subQuery) {
+            return createCompositeCondition(Expression.notExists(subQuery));
+        }
+
+        private Condition createCompositeCondition(Condition expression) {
+            return new CompositeCondition(chainingOperator, leftCondition, expression);
         }
     }
 
     class CompositeCondition implements Condition {
-        private String type;
-        private List<Condition> conditions;
+        private final String type;
+        private final List<Condition> conditions;
 
         public CompositeCondition(String type, Condition... conditions) {
             this.type = type;
@@ -111,7 +159,10 @@ class ComparisionCondition implements Condition {
 
     @Override
     public List<Object> getParameters() {
-        return List.of();
+        List<Object> params = new ArrayList<>();
+        column.addParameters(params);
+        comparisonValue.addParameters(params);
+        return params;
     }
 }
 
@@ -129,6 +180,7 @@ class NullCondition implements Condition {
 
     @Override
     public List<Object> getParameters() {
+        // IS NULL has no parameters
         return List.of();
     }
 }
@@ -141,6 +193,132 @@ class NotNullCondition extends NullCondition {
     @Override
     public String toSql() {
         return column + " IS NOT NULL";
+    }
+}
+
+class NotCondition implements Condition {
+    private final Condition condition;
+
+    public NotCondition(Condition condition) {
+        this.condition = condition;
+    }
+
+    @Override
+    public String toSql() {
+        return "NOT " + condition.toSql();
+    }
+
+    @Override
+    public List<Object> getParameters() {
+        return condition.getParameters();
+    }
+}
+
+class InCondition implements Condition {
+    protected final String column;
+    protected final List<Object> values;
+    protected final SelectBuilder subQuery;
+    protected final String operator;
+
+    public InCondition(String column, List<Object> values) {
+        this(column, values, null, "IN");
+    }
+
+    public InCondition(String column, Object... values) {
+        this(column, List.of(values));
+    }
+
+    public InCondition(String column, SelectBuilder subQuery) {
+        this(column, null, subQuery, "IN");
+    }
+
+    protected InCondition(String column, List<Object> values, SelectBuilder subQuery, String operator) {
+        this.column = column;
+        this.values = values;
+        this.subQuery = subQuery;
+        this.operator = operator;
+    }
+
+    @Override
+    public String toSql() {
+        StringJoiner sql = new StringJoiner(" ")
+                .add(column)
+                .add(operator)
+                .add("(");
+        if(values != null) {
+            if(values.isEmpty()) {
+                throw new ValueCannotBeEmptyException("IN-values");
+            }
+
+            sql.add(values.stream().map(v -> "?").collect(Collectors.joining(", ")));
+        // no null check for sub query needed because only either values or subQuery can be null because of the constructor
+        } else {
+            //TODO: replace getStatement with method that fills the prepared statement with the actual values
+            sql.add(subQuery.build().getStatement());
+        }
+        sql.add(")");
+        return sql.toString();
+    }
+
+    @Override
+    public List<Object> getParameters() {
+        if(values != null) {
+            return values;
+        }
+        return subQuery.build().getParameters();
+    }
+}
+
+class NotInCondition extends InCondition {
+    public NotInCondition(String column, SelectBuilder subQuery) {
+        this(column, null, subQuery);
+    }
+
+    public NotInCondition(String column, List<Object> values) {
+        this(column, values, null);
+    }
+
+    public NotInCondition(String column, Object... values) {
+        this(column, List.of(values));
+    }
+
+    private NotInCondition(String column, List<Object> values, SelectBuilder subQuery) {
+        super(column, values, subQuery, "NOT IN");
+    }
+}
+
+class ExistsCondition implements Condition {
+    protected final SelectBuilder subQuery;
+    protected final String operator;
+
+    public ExistsCondition(SelectBuilder subQuery) {
+        this(subQuery, "EXISTS");
+    }
+
+    protected ExistsCondition(SelectBuilder subQuery, String operator) {
+        this.subQuery = subQuery;
+        this.operator = operator;
+    }
+
+    @Override
+    public String toSql() {
+        StringJoiner exists = new StringJoiner(" ")
+                .add(operator)
+                .add("(")
+                .add(subQuery.build().getStatement())
+                .add(")");
+        return exists.toString();
+    }
+
+    @Override
+    public List<Object> getParameters() {
+        return subQuery.build().getParameters();
+    }
+}
+
+class NotExistsCondition extends ExistsCondition {
+    public NotExistsCondition(SelectBuilder subQuery) {
+        super(subQuery, "NOT EXISTS");
     }
 }
 
