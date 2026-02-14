@@ -95,6 +95,18 @@ public class Expression {
         return new InCondition(column, subQuery);
     }
 
+    public static Condition notIn(String column, List<Object> values) {
+        return new NotInCondition(column, values);
+    }
+
+    public static Condition notIn(String column, Object... values) {
+        return notIn(column, List.of(values));
+    }
+
+    public static Condition notIn(String column, SelectBuilder subQuery) {
+        return new NotInCondition(column, subQuery);
+    }
+
     public static Condition brackets(Condition expression) {
         //TODO: Implement bracket support
         return null;

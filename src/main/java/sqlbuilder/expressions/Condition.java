@@ -78,6 +78,18 @@ public interface Condition {
             return createCompositeCondition(Expression.in(column, subQuery));
         }
 
+        public Condition notIn(String column, List<Object> values) {
+            return createCompositeCondition(Expression.notIn(column, values));
+        }
+
+        public Condition notIn(String column, Object... values) {
+            return notIn(column, List.of(values));
+        }
+
+        public Condition notIn(String column, SelectBuilder subQuery) {
+            return createCompositeCondition(Expression.notIn(column, subQuery));
+        }
+
         private Condition createCompositeCondition(Condition expression) {
             return new CompositeCondition(chainingOperator, leftCondition, expression);
         }
@@ -195,14 +207,13 @@ class NotCondition implements Condition {
 }
 
 class InCondition implements Condition {
-    private final String column;
-    private final List<Object> values;
-    private final SelectBuilder subQuery;
+    protected final String column;
+    protected final List<Object> values;
+    protected final SelectBuilder subQuery;
+    protected final String operator;
 
     public InCondition(String column, List<Object> values) {
-        this.column = column;
-        this.values = values;
-        this.subQuery = null;
+        this(column, values, null, "IN");
     }
 
     public InCondition(String column, Object... values) {
@@ -210,26 +221,35 @@ class InCondition implements Condition {
     }
 
     public InCondition(String column, SelectBuilder subQuery) {
+        this(column, null, subQuery, "IN");
+    }
+
+    protected InCondition(String column, List<Object> values, SelectBuilder subQuery, String operator) {
         this.column = column;
-        this.values = null;
+        this.values = values;
         this.subQuery = subQuery;
+        this.operator = operator;
     }
 
     @Override
     public String toSql() {
-        StringBuilder sql = new StringBuilder(column + " IN (");
+        StringJoiner sql = new StringJoiner(" ")
+                .add(column)
+                .add(operator)
+                .add("(");
         if(values != null) {
             if(values.isEmpty()) {
                 throw new ValueCannotBeEmptyException("IN-values");
             }
 
-            sql.append(values.stream().map(v -> "?").collect(Collectors.joining(", ")));
+            sql.add(values.stream().map(v -> "?").collect(Collectors.joining(", ")));
         // no null check for sub query needed because only either values or subQuery can be null because of the constructor
         } else {
             //TODO: replace getStatement with method that fills the prepared statement with the actual values
-            sql.append(subQuery.build().getStatement());
+            sql.add(subQuery.build().getStatement());
         }
-        return sql + ")";
+        sql.add(")");
+        return sql.toString();
     }
 
     @Override
@@ -238,6 +258,24 @@ class InCondition implements Condition {
             return values;
         }
         return subQuery.build().getParameters();
+    }
+}
+
+class NotInCondition extends InCondition {
+    public NotInCondition(String column, SelectBuilder subQuery) {
+        this(column, null, subQuery);
+    }
+
+    public NotInCondition(String column, List<Object> values) {
+        this(column, values, null);
+    }
+
+    public NotInCondition(String column, Object... values) {
+        this(column, List.of(values));
+    }
+
+    private NotInCondition(String column, List<Object> values, SelectBuilder subQuery) {
+        super(column, values, subQuery, "NOT IN");
     }
 }
 
