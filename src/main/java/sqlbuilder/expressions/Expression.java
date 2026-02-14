@@ -5,6 +5,18 @@ public class Expression {
         return new ColumnOperand(columnName);
     }
 
+    public static Operand column(String alias, String columnName) {
+        if(alias == null || alias.isBlank()) {
+            return column(columnName);
+        }
+
+        if(columnName.contains(".")) {
+            columnName = columnName.substring(columnName.lastIndexOf('.') + 1);
+        }
+
+        return new ColumnOperand(alias + "." + columnName);
+    }
+
     public static Operand value(Object value) {
         return new ValueOperand(value);
     }
