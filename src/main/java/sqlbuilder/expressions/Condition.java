@@ -241,22 +241,21 @@ class InCondition implements Condition {
 
     @Override
     public String toSql() {
-        StringJoiner sql = new StringJoiner(" ")
-                .add(column)
-                .add(operator)
-                .add("(");
+        StringBuilder sql = new StringBuilder()
+                .append(column)
+                .append(" ")
+                .append(operator)
+                .append(" (");
         if(values != null) {
             if(values.isEmpty()) {
                 throw new ValueCannotBeEmptyException("IN-values");
             }
 
-            sql.add(values.stream().map(v -> "?").collect(Collectors.joining(", ")));
-        // no null check for sub query needed because only either values or subQuery can be null because of the constructor
+            sql.append(values.stream().map(v -> "?").collect(Collectors.joining(", ")));
         } else {
-            //TODO: replace getStatement with method that fills the prepared statement with the actual values
-            sql.add(subQuery.build().getStatement());
+            sql.append(subQuery.build().getStatement());
         }
-        sql.add(")");
+        sql.append(")");
         return sql.toString();
     }
 
@@ -302,12 +301,7 @@ class ExistsCondition implements Condition {
 
     @Override
     public String toSql() {
-        StringJoiner exists = new StringJoiner(" ")
-                .add(operator)
-                .add("(")
-                .add(subQuery.build().getStatement())
-                .add(")");
-        return exists.toString();
+        return operator + " (" + subQuery.build().getStatement() + ")";
     }
 
     @Override
