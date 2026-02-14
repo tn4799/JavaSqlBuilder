@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import sqlbuilder.dialects.SqlDialect;
 import sqlbuilder.expressions.Expression;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SelectBuilderTest {
@@ -36,6 +38,7 @@ class SelectBuilderTest {
                 .where(Expression.eq("id", 1))
                 .build();
         assertEquals("SELECT * FROM users WHERE id = ?", query.getStatement());
+        assertEquals(List.of(1), query.getParameters());
     }
 
     @Test
@@ -45,6 +48,57 @@ class SelectBuilderTest {
                 .where(Expression.eq("status", "active").and().gt("age", 18))
                 .build();
         assertEquals("SELECT * FROM users WHERE status = ? AND age > ?", query.getStatement());
+        assertEquals(List.of("active", 18), query.getParameters());
+    }
+
+    @Test
+    void testInCondition() {
+        SelectBuilder builder = new SelectBuilder(new SqlDialect.PostgresDialect());
+        Query query = builder.from("users")
+                .where(Expression.in("status", "active", "pending", "archived"))
+                .build();
+        assertEquals("SELECT * FROM users WHERE status IN (?, ?, ?)", query.getStatement());
+        assertEquals(List.of("active", "pending", "archived"), query.getParameters());
+    }
+
+    @Test
+    void testInWithSubquery() {
+        SqlDialect dialect = new SqlDialect.PostgresDialect();
+        SelectBuilder subQuery = new SelectBuilder(dialect).select("id").from("active_users");
+        SelectBuilder builder = new SelectBuilder(dialect).from("orders")
+                .where(Expression.in("user_id", subQuery));
+        Query query = builder.build();
+        assertEquals("SELECT * FROM orders WHERE user_id IN (SELECT \"id\" FROM active_users)", query.getStatement());
+    }
+
+    @Test
+    void testExistsCondition() {
+        SqlDialect dialect = new SqlDialect.PostgresDialect();
+        SelectBuilder subQuery = new SelectBuilder(dialect).from("orders").where(Expression.eq("user_id", Expression.column("users.id")));
+        SelectBuilder builder = new SelectBuilder(dialect).from("users")
+                .where(Expression.exists(subQuery));
+        Query query = builder.build();
+        assertEquals("SELECT * FROM users WHERE EXISTS (SELECT * FROM orders WHERE user_id = users.id)", query.getStatement());
+    }
+
+    @Test
+    void testNotCondition() {
+        SelectBuilder builder = new SelectBuilder(new SqlDialect.PostgresDialect());
+        Query query = builder.from("users")
+                .where(Expression.not(Expression.eq("status", "deleted")))
+                .build();
+        assertEquals("SELECT * FROM users WHERE NOT status = ?", query.getStatement());
+        assertEquals(List.of("deleted"), query.getParameters());
+    }
+
+    @Test
+    void testConditionChaining() {
+        SelectBuilder builder = new SelectBuilder(new SqlDialect.PostgresDialect());
+        Query query = builder.from("users")
+                .where(Expression.eq("status", "active").and().in("role", "admin", "editor"))
+                .build();
+        assertEquals("SELECT * FROM users WHERE status = ? AND role IN (?, ?)", query.getStatement());
+        assertEquals(List.of("active", "admin", "editor"), query.getParameters());
     }
 
     @Test
