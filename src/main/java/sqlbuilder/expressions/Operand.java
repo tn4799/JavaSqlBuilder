@@ -42,3 +42,25 @@ class ColumnOperand implements Operand {
         // do nothing
     }
 }
+
+class Parameter implements Operand {
+    private final int index;
+
+    public Parameter(int index) {
+        this.index = index;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    @Override
+    public String toSql() {
+        return "?";
+    }
+
+    @Override
+    public void addParameters(List<Object> parameters) {
+        // do nothing
+    }
+}

@@ -9,6 +9,10 @@ public class Expression {
         return new ValueOperand(value);
     }
 
+    public static Operand param(int index) {
+        return new Parameter(index);
+    }
+
     public static Condition eq(String column, Object comparisonValue) {
         Operand left = new ColumnOperand(column);
         Operand right = getCorrectOperand(comparisonValue);
