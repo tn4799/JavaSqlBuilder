@@ -90,6 +90,14 @@ public interface Condition {
             return createCompositeCondition(Expression.notIn(column, subQuery));
         }
 
+        public Condition exists(SelectBuilder subQuery) {
+            return createCompositeCondition(Expression.exists(subQuery));
+        }
+
+        public Condition notExists(SelectBuilder subQuery) {
+            return createCompositeCondition(Expression.notExists(subQuery));
+        }
+
         private Condition createCompositeCondition(Condition expression) {
             return new CompositeCondition(chainingOperator, leftCondition, expression);
         }
@@ -276,6 +284,41 @@ class NotInCondition extends InCondition {
 
     private NotInCondition(String column, List<Object> values, SelectBuilder subQuery) {
         super(column, values, subQuery, "NOT IN");
+    }
+}
+
+class ExistsCondition implements Condition {
+    protected final SelectBuilder subQuery;
+    protected final String operator;
+
+    public ExistsCondition(SelectBuilder subQuery) {
+        this(subQuery, "EXISTS");
+    }
+
+    protected ExistsCondition(SelectBuilder subQuery, String operator) {
+        this.subQuery = subQuery;
+        this.operator = operator;
+    }
+
+    @Override
+    public String toSql() {
+        StringJoiner exists = new StringJoiner(" ")
+                .add(operator)
+                .add("(")
+                .add(subQuery.build().getStatement())
+                .add(")");
+        return exists.toString();
+    }
+
+    @Override
+    public List<Object> getParameters() {
+        return subQuery.build().getParameters();
+    }
+}
+
+class NotExistsCondition extends ExistsCondition {
+    public NotExistsCondition(SelectBuilder subQuery) {
+        super(subQuery, "NOT EXISTS");
     }
 }
 

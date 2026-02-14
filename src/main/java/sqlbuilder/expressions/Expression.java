@@ -107,6 +107,14 @@ public class Expression {
         return new NotInCondition(column, subQuery);
     }
 
+    public static Condition exists(SelectBuilder subQuery) {
+        return new ExistsCondition(subQuery);
+    }
+
+    public static Condition notExists(SelectBuilder subQuery) {
+        return new NotExistsCondition(subQuery);
+    }
+
     public static Condition brackets(Condition expression) {
         //TODO: Implement bracket support
         return null;
