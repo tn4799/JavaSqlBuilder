@@ -14,7 +14,36 @@ public class SelectBuilder {
     private final List<String> columns = new ArrayList<>();
     private final List<String> tables = new ArrayList<>();
     private final Set<String> tablesContext = new HashSet<>();
-    private final List<String> joins = new ArrayList<>();
+    private static class Join {
+        private final String table;
+        private final String alias;
+        private final Condition condition;
+
+        public Join(String table, String alias, Condition condition) {
+            this.table = table;
+            this.alias = alias;
+            this.condition = condition;
+        }
+
+        public String toSql(SqlDialect dialect, String schema) {
+            StringBuilder sql = new StringBuilder("JOIN ");
+            if (schema != null && !schema.isBlank()) {
+                sql.append(schema).append(".");
+            }
+            sql.append(table);
+            if (alias != null && !alias.isBlank()) {
+                sql.append(" ").append(alias);
+            }
+            sql.append(" ON ").append(condition.toSql());
+            return sql.toString();
+        }
+
+        public List<Object> getParameters() {
+            return condition.getParameters();
+        }
+    }
+
+    private final List<Join> joins = new ArrayList<>();
     private final List<Condition> conditions = new ArrayList<>();
     private final List<String> groupColumns = new ArrayList<>();
     private final List<String> orderColumns = new ArrayList<>();
@@ -87,28 +116,12 @@ public class SelectBuilder {
     }
 
     public SelectBuilder join(String table, Condition joinCondition) {
-        tablesContext.add(table);
-        table = addSchemaToTable(this.dialect.formatTableIdentifier(table, tablesContext));
-        StringJoiner join = new StringJoiner(" ")
-                .add("JOIN");
-        join.add(table)
-                .add("ON")
-                .add(joinCondition.toSql());
-
-        joins.add(join.toString());
-        return this;
+        return join(table, null, joinCondition);
     }
 
     public SelectBuilder join(String table, String alias, Condition joinCondition) {
         tablesContext.add(table);
-        StringJoiner join = new StringJoiner(" ")
-                .add("JOIN");
-        join.add(addSchemaToTable(table))
-                .add(alias)
-                .add("ON")
-                .add(joinCondition.toSql());
-
-        joins.add(join.toString());
+        joins.add(new Join(table, alias, joinCondition));
         return this;
     }
 
@@ -188,12 +201,13 @@ public class SelectBuilder {
                 .add("FROM")
                 .add(String.join(", ", tables));
 
-        joins.forEach(statement::add);
+        joins.forEach(join -> statement.add(join.toSql(dialect, schema)));
 
+        Condition whereCondition = null;
         if(!conditions.isEmpty()) {
             statement.add("WHERE");
-
-            statement.add(new Condition.CompositeCondition("AND", conditions).toSql());
+            whereCondition = new Condition.CompositeCondition("AND", conditions);
+            statement.add(whereCondition.toSql());
         }
 
         if(!orderColumns.isEmpty()) {
@@ -208,7 +222,12 @@ public class SelectBuilder {
             statement.add(dialect.applyPaging(limit, offset));
         }
 
-        return new Query(statement.toString());
+        Query query = new Query(statement.toString());
+        joins.forEach(join -> join.getParameters().forEach(query::addParameter));
+        if (whereCondition != null) {
+            whereCondition.getParameters().forEach(query::addParameter);
+        }
+        return query;
     }
 
     private String addSchemaToTable(String table) {
