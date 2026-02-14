@@ -29,6 +29,10 @@ public class Expression {
         return new Parameter(index);
     }
 
+    public static Operand.CaseBuilder _case() {
+        return new Operand.CaseBuilder();
+    }
+
     public static Condition eq(String column, Object comparisonValue) {
         Operand left = new ColumnOperand(column);
         Operand right = getCorrectOperand(comparisonValue);
