@@ -1,5 +1,8 @@
 package sqlbuilder;
 
+import sqlbuilder.expressions.Operand;
+
+import java.lang.reflect.Parameter;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +18,28 @@ public class Query {
         this.parameters.addAll(parameters);
     }
 
-    public void addParameter(Object parameter) {
-        parameters.add(parameter);
+    public void setParameter(String parameterKey, String value) {
+        Operand.Parameter.Param parameter = getParameterForKey(parameterKey);
+        parameter.setValue(value);
+    }
+
+    public void setParameter(String parameterKey, Number value) {
+        Operand.Parameter.Param parameter = getParameterForKey(parameterKey);
+        parameter.setValue(value);
+    }
+
+    public void setParameter(String parameterKey, boolean value) {
+        Operand.Parameter.Param parameter = getParameterForKey(parameterKey);
+        parameter.setValue(value);
+    }
+
+    private Operand.Parameter.Param getParameterForKey(String parameterKey) {
+        return parameters.stream()
+                .filter(param -> param instanceof Operand.Parameter.Param)
+                .map(param -> (Operand.Parameter.Param) param)
+                .filter(param -> parameterKey.equals(param.getNameKey()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Parameter with key '%s' is not defined!".formatted(parameterKey)));
     }
 
     public List<Object> getParameters() {
@@ -32,7 +55,7 @@ public class Query {
         Matcher matcher = Pattern.compile("\\?").matcher(statement);
 
         for(Object param : parameters) {
-            if(param == null) {
+            if(param instanceof Operand.Parameter.Param && ((Operand.Parameter.Param) param).getValue() == null) {
                 // move the matcher forward to ignore prepared statement parameter
                 matcher.find();
                 continue;
