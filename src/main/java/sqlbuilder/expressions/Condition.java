@@ -253,7 +253,6 @@ class InCondition implements Condition {
             sql.add(values.stream().map(v -> "?").collect(Collectors.joining(", ")));
         // no null check for sub query needed because only either values or subQuery can be null because of the constructor
         } else {
-            //TODO: replace getStatement with method that fills the prepared statement with the actual values
             sql.add(subQuery.build().getStatement());
         }
         sql.add(")");
