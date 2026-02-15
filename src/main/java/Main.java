@@ -22,7 +22,7 @@ public class Main {
                 //.select("A")
                 .from("TABLE")
                 .where(Expression.eq("C", 3).and().neq("C", 4))
-                .where(Expression.gt("E", "ABC").and().leq("F", Expression.param(4)))
+                .where(Expression.gt("E", "ABC").and().leq("F", Expression.param("paramF")))
                 .where(Expression.eq("CAST", Expression._case().whenThen(Expression.isNull("HAUS"), Expression.column("AUTO"))._else("HAUS")))
                 .where(Expression.in("I", 1,2,3).or().like("J", Expression.column("K")))
                 .where(Expression.in("BASE",
