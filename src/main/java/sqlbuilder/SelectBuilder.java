@@ -175,6 +175,8 @@ public class SelectBuilder {
             throw new IllegalStateException("A table to select from must be specified");
         }
 
+        List<Object> parameters = new ArrayList<>();
+
         if(columns.isEmpty()) {
             columns.add("*");
         }
@@ -193,7 +195,9 @@ public class SelectBuilder {
         if(!conditions.isEmpty()) {
             statement.add("WHERE");
 
-            statement.add(new Condition.CompositeCondition("AND", conditions).toSql());
+            Condition.CompositeCondition chainedConditions = new Condition.CompositeCondition("AND", conditions);
+            parameters.addAll(chainedConditions.getParameters());
+            statement.add(chainedConditions.toSql());
         }
 
         if(!orderColumns.isEmpty()) {
@@ -208,7 +212,7 @@ public class SelectBuilder {
             statement.add(dialect.applyPaging(limit, offset));
         }
 
-        return new Query(statement.toString());
+        return new Query(statement.toString(), parameters);
     }
 
     private String addSchemaToTable(String table) {
