@@ -1,9 +1,9 @@
 package sqlbuilder.expressions;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
+import sqlbuilder.SelectBuilder;
+import sqlbuilder.exceptions.DuplicateKeyException;
+
+import java.util.*;
 
 public interface Operand {
     public String toSql();
@@ -66,6 +66,90 @@ public interface Operand {
         }
     }
 
+    public class SubQuery implements Operand {
+        private final SelectBuilder subQuery;
+
+        public SubQuery(SelectBuilder subQuery) {
+            this.subQuery = subQuery;
+        }
+
+        @Override
+        public String toSql() {
+            return "( %s )".formatted(subQuery.build().getStatement());
+        }
+
+        @Override
+        public void addParameters(List<Object> parameters) {
+            parameters.addAll(subQuery.build().getParameters());
+        }
+    }
+
+    public class Parameter implements Operand {
+        private static final Set<String> registeredKeys = new HashSet<>();
+        private final String nameKey;
+
+        public Parameter(String nameKey) {
+            if(registeredKeys.contains(nameKey)) {
+                throw new DuplicateKeyException(nameKey);
+            }
+            this.nameKey = nameKey;
+            registeredKeys.add(nameKey);
+        }
+
+        public String getNameKey() {
+            return nameKey;
+        }
+
+        @Override
+        public String toSql() {
+            return "?";
+        }
+
+        @Override
+        public void addParameters(List<Object> parameters) {
+            parameters.add(new Param(nameKey, parameters.size()));
+        }
+
+        public class Param {
+            private final String nameKey;
+            private final int internalKey;
+            private ValueOperand value = null;
+
+            private Param(String nameKey, int internalKey) {
+                this.nameKey = nameKey;
+                this.internalKey = internalKey;
+            }
+
+            public String getNameKey() {
+                return nameKey;
+            }
+
+            public int getInternalKey() {
+                return internalKey;
+            }
+
+            public void setValue(String value) {
+                this.value = new ValueOperand(value);
+            }
+
+            public void setValue(boolean value) {
+                this.value = new ValueOperand(value);
+            }
+
+            public void setValue(Number value) {
+                this.value = new ValueOperand(value);
+            }
+
+            public Operand getValue() {
+                return this.value;
+            }
+
+            @Override
+            public String toString() {
+                return this.value.toSql();
+            }
+        }
+    }
 }
 
 class ValueOperand implements Operand {
@@ -96,28 +180,6 @@ class ColumnOperand implements Operand {
     @Override
     public String toSql() {
         return columnName;
-    }
-
-    @Override
-    public void addParameters(List<Object> parameters) {
-        // do nothing
-    }
-}
-
-class Parameter implements Operand {
-    private final int index;
-
-    public Parameter(int index) {
-        this.index = index;
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    @Override
-    public String toSql() {
-        return "?";
     }
 
     @Override

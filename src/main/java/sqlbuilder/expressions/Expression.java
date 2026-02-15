@@ -25,8 +25,8 @@ public class Expression {
         return new ValueOperand(value);
     }
 
-    public static Operand param(int index) {
-        return new Parameter(index);
+    public static Operand param(String nameKey) {
+        return new Operand.Parameter(nameKey);
     }
 
     public static Operand.CaseBuilder _case() {
