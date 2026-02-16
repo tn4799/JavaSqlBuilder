@@ -98,6 +98,14 @@ public interface Condition {
             return createCompositeCondition(Expression.notExists(subQuery));
         }
 
+        public Condition between(String column, Object lowerBound, Object upperBound) {
+            return createCompositeCondition(Expression.between(column, lowerBound, upperBound));
+        }
+
+        public Condition notBetween(String column, Object lowerBound, Object upperBound) {
+            return createCompositeCondition(Expression.notBetween(column, lowerBound, upperBound));
+        }
+
         private Condition createCompositeCondition(Condition expression) {
             return new CompositeCondition(chainingOperator, leftCondition, expression);
         }
@@ -318,6 +326,37 @@ class ExistsCondition implements Condition {
 class NotExistsCondition extends ExistsCondition {
     public NotExistsCondition(SelectBuilder subQuery) {
         super(subQuery, "NOT EXISTS");
+    }
+}
+
+class BetweenCondition implements Condition {
+    private final Operand column;
+    private final Operand lowerBound;
+    private final Operand upperBound;
+
+    public BetweenCondition(Operand column, Operand lowerBound, Operand upperBound) {
+        this.column = column;
+        this.lowerBound = lowerBound;
+        this.upperBound = upperBound;
+    }
+
+    @Override
+    public String toSql() {
+        return new StringJoiner(" ")
+                .add(column.toSql())
+                .add("BETWEEN")
+                .add(lowerBound.toSql())
+                .add("AND")
+                .add(upperBound.toSql())
+                .toString();
+    }
+
+    @Override
+    public List<Object> getParameters() {
+        List<Object> params = new ArrayList<>();
+        lowerBound.addParameters(params);
+        upperBound.addParameters(params);
+        return params;
     }
 }
 

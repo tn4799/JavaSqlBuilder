@@ -119,6 +119,14 @@ public class Expression {
         return new NotExistsCondition(subQuery);
     }
 
+    public static Condition between(String column, Object lowerBound, Object upperBound) {
+        return new BetweenCondition(column(column), value(lowerBound), value(upperBound));
+    }
+
+    public static Condition notBetween(String column, Object lowerBound, Object upperBound) {
+        return not(between(column, lowerBound, upperBound));
+    }
+
     public static Condition brackets(Condition expression) {
         //TODO: Implement bracket support
         return null;
