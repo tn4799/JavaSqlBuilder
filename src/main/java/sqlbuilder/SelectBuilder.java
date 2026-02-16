@@ -187,6 +187,10 @@ public class SelectBuilder {
     }
 
     public SelectBuilder having(Condition condition) {
+        if(havingCondition != null) {
+            throw new IllegalStateException("HAVING can only be called once!");
+        }
+
         this.havingCondition = condition;
         return this;
     }
