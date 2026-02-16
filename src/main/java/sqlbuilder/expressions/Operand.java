@@ -230,6 +230,10 @@ class AnyAllOperand implements Operand {
             parameters.addAll(subQuery.build().getParameters());
         }
     }
+
+    public String getOperand() {
+        return operand;
+    }
 }
 
 class AnyOperand extends AnyAllOperand {
