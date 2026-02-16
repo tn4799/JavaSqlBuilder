@@ -17,6 +17,7 @@ public class SelectBuilder {
     private final List<Condition> conditions = new ArrayList<>();
     private final List<String> groupColumns = new ArrayList<>();
     private final List<String> orderColumns = new ArrayList<>();
+    private Condition havingCondition = null;
     private String orderDirection = null;
     private boolean distinct = false;
 
@@ -185,6 +186,11 @@ public class SelectBuilder {
         return this;
     }
 
+    public SelectBuilder having(Condition condition) {
+        this.havingCondition = condition;
+        return this;
+    }
+
     public SelectBuilder orderBy(String... columns) {
         orderColumns.addAll(List.of(columns));
         return this;
@@ -261,6 +267,11 @@ public class SelectBuilder {
         if(!groupColumns.isEmpty()) {
             statement.add("GROUP BY")
                     .add(String.join(", ", groupColumns));
+        }
+
+        if(havingCondition != null) {
+            statement.add("HAVING").add(havingCondition.toSql());
+            parameters.addAll(havingCondition.getParameters());
         }
 
         if(!orderColumns.isEmpty()) {
