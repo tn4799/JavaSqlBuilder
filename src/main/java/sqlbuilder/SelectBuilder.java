@@ -120,15 +120,49 @@ public class SelectBuilder {
     }
 
     public SelectBuilder join(String table, String alias, Condition joinCondition) {
+        registerJoinVariation("JOIN", table, alias, joinCondition);
+        return this;
+    }
+
+    public SelectBuilder leftJoin(String table, Condition joinCondition) {
+        leftJoin(table, table, joinCondition);
+        return this;
+    }
+
+    public SelectBuilder leftJoin(String table, String alias, Condition joinCondition) {
+        registerJoinVariation("LEFT JOIN", table, alias, joinCondition);
+        return this;
+    }
+
+    public SelectBuilder rightJoin(String table, Condition joinCondition) {
+        leftJoin(table, table, joinCondition);
+        return this;
+    }
+
+    public SelectBuilder rightJoin(String table, String alias, Condition joinCondition) {
+        registerJoinVariation("RIGHT JOIN", table, alias, joinCondition);
+        return this;
+    }
+
+    public SelectBuilder fullJoin(String table, Condition joinCondition) {
+        leftJoin(table, table, joinCondition);
+        return this;
+    }
+
+    public SelectBuilder fullJoin(String table, String alias, Condition joinCondition) {
+        registerJoinVariation("FULL JOIN", table, alias, joinCondition);
+        return this;
+    }
+
+    private void registerJoinVariation(String joinOperator, String table, String alias, Condition joinCondition) {
         StringJoiner join = new StringJoiner(" ")
-                .add("JOIN");
-        join.add(addSchemaToTable(table))
+                .add(joinOperator)
+                .add(addSchemaToTable(table))
                 .add(alias)
                 .add("ON")
                 .add(joinCondition.toSql());
 
         joins.add(join.toString());
-        return this;
     }
 
     /**
