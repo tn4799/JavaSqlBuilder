@@ -8,9 +8,6 @@ public interface SqlDialect {
     default public String quote(String identifier) {
         return "\"" + identifier + "\"";
     }
-    default public String formatTableIdentifier(String tableIdentifier, Set<String> tableContext) {
-        return tableIdentifier;
-    }
 
     /**
      * Applies paging with an offset to the SQL statement using the dialect specific syntax
@@ -34,23 +31,6 @@ public interface SqlDialect {
         public String applyPaging(int limit, int offset) {
             //TODO implement paging syntax
             return "";
-        }
-
-        @Override
-        public String formatTableIdentifier(String tableIdentifier, Set<String> tableContext) {
-            if(tableIdentifier == null || tableIdentifier.isBlank()) {
-                throw new ValueCannotBeEmptyException("tableIdentifier");
-            }
-
-            for(String tableName : tableContext) {
-                String prefix = tableName + ".";
-
-                if(tableIdentifier.startsWith(prefix)) {
-                    return tableIdentifier.substring(prefix.length());
-                }
-            }
-
-            return tableIdentifier;
         }
     }
 

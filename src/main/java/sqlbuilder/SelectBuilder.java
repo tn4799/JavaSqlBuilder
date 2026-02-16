@@ -13,7 +13,6 @@ public class SelectBuilder {
 
     private final List<String> columns = new ArrayList<>();
     private final List<String> tables = new ArrayList<>();
-    private final Set<String> tablesContext = new HashSet<>();
     private final List<String> joins = new ArrayList<>();
     private final List<Condition> conditions = new ArrayList<>();
     private final List<String> groupColumns = new ArrayList<>();
@@ -34,18 +33,46 @@ public class SelectBuilder {
     }
 
     public SelectBuilder select(String... columns) {
-        if(columns.length == 0) {
+        if(columns == null || columns.length == 0) {
             throw new ValueCannotBeEmptyException("columns");
         }
 
         Arrays.stream(columns)
-                .map(dialect::quote)
+                .map(column -> addAliasToColumn(dialect.quote(column), column))
                 .forEach(this.columns::add);
+        return this;
+    }
+
+    public SelectBuilder select(String column) {
+        select(column, column);
+        return this;
+    }
+
+    public SelectBuilder select(String column, String alias) {
+        if(column == null || column.isBlank()) {
+            throw new ValueCannotBeEmptyException("column");
+        }
+
+        column = addAliasToColumn(dialect.quote(column), alias);
+
+        this.columns.add(column);
         return this;
     }
 
     public SelectBuilder selectDistinct(String... columns) {
         select(columns);
+        distinct = true;
+        return this;
+    }
+
+    public SelectBuilder selectDistinct(String column) {
+        select(column);
+        distinct = true;
+        return this;
+    }
+
+    public SelectBuilder selectDistinct(String column, String alias) {
+        select(column, alias);
         distinct = true;
         return this;
     }
@@ -62,7 +89,6 @@ public class SelectBuilder {
 
         List<String> tableList = Arrays.asList(tables);
         this.tables.addAll(tableList.stream().map(this::addSchemaToTable).toList());
-        this.tablesContext.addAll(tableList);
         return this;
     }
 
@@ -71,8 +97,7 @@ public class SelectBuilder {
             throw new ValueCannotBeEmptyException("table");
         }
 
-        this.tables.add(addSchemaToTable(table));
-        this.tablesContext.add(table);
+        from(table, table);
         return this;
     }
 
@@ -81,26 +106,20 @@ public class SelectBuilder {
             return from(table);
         }
 
+        if(table == null || table.isBlank()) {
+            throw new ValueCannotBeEmptyException("table");
+        }
+
         this.tables.add(addSchemaToTable(table) + " " + alias);
-        this.tablesContext.add(table);
         return this;
     }
 
     public SelectBuilder join(String table, Condition joinCondition) {
-        tablesContext.add(table);
-        table = addSchemaToTable(this.dialect.formatTableIdentifier(table, tablesContext));
-        StringJoiner join = new StringJoiner(" ")
-                .add("JOIN");
-        join.add(table)
-                .add("ON")
-                .add(joinCondition.toSql());
-
-        joins.add(join.toString());
+        join(table, table, joinCondition);
         return this;
     }
 
     public SelectBuilder join(String table, String alias, Condition joinCondition) {
-        tablesContext.add(table);
         StringJoiner join = new StringJoiner(" ")
                 .add("JOIN");
         join.add(addSchemaToTable(table))
@@ -124,6 +143,11 @@ public class SelectBuilder {
         }
 
         conditions.add(condition);
+        return this;
+    }
+
+    public SelectBuilder groupBy(String... columns) {
+        groupColumns.addAll(List.of(columns));
         return this;
     }
 
@@ -200,6 +224,11 @@ public class SelectBuilder {
             statement.add(chainedConditions.toSql());
         }
 
+        if(!groupColumns.isEmpty()) {
+            statement.add("GROUP BY")
+                    .add(String.join(", ", groupColumns));
+        }
+
         if(!orderColumns.isEmpty()) {
             if(orderDirection == null) {
                 orderDirection = "DESC";
@@ -221,5 +250,17 @@ public class SelectBuilder {
         }
 
         return schema + "." + table;
+    }
+
+    private static String addAliasToColumn(String column, String alias) {
+        if(column.contains(".")){
+            column = column + " AS " + quoteAlias(alias);
+        }
+
+        return column;
+    }
+
+    private static String quoteAlias(String alias) {
+        return "\"%s\"".formatted(alias);
     }
 }
