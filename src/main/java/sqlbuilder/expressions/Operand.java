@@ -4,6 +4,7 @@ import sqlbuilder.SelectBuilder;
 import sqlbuilder.exceptions.DuplicateKeyException;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public interface Operand {
     public String toSql();
@@ -185,5 +186,68 @@ class ColumnOperand implements Operand {
     @Override
     public void addParameters(List<Object> parameters) {
         // do nothing
+    }
+}
+
+class AnyAllOperand implements Operand {
+    private final String operand;
+    private final List<Operand> values;
+    private final SelectBuilder subQuery;
+
+    protected AnyAllOperand(String operand, List<Operand> values) {
+        this(operand, values, null);
+    }
+
+    protected AnyAllOperand(String operand, SelectBuilder subQuery) {
+        this(operand, null, subQuery);
+    }
+
+    private AnyAllOperand(String operand, List<Operand> values, SelectBuilder subQuery) {
+        this.operand = operand;
+        this.values = values;
+        this.subQuery = subQuery;
+    }
+
+    @Override
+    public String toSql() {
+        StringJoiner sql = new StringJoiner(" ")
+                .add(operand)
+                .add("(");
+        if(values != null) {
+          sql.add(values.stream().map(v -> "?").collect(Collectors.joining(", ")));
+        } else {
+            sql.add(subQuery.build().getStatement());
+        }
+        sql.add(")");
+        return sql.toString();
+    }
+
+    @Override
+    public void addParameters(List<Object> parameters) {
+        if(values != null) {
+            parameters.addAll(values);
+        } else {
+            parameters.addAll(subQuery.build().getParameters());
+        }
+    }
+}
+
+class AnyOperand extends AnyAllOperand {
+    AnyOperand(List<Operand> values) {
+        super("ANY", values);
+    }
+
+    AnyOperand(SelectBuilder subQuery) {
+        super("ANY", subQuery);
+    }
+}
+
+class AllOperand extends AnyAllOperand {
+    AllOperand(List<Operand> values) {
+        super("ALL", values);
+    }
+
+    AllOperand(SelectBuilder subQuery) {
+        super("ALL", subQuery);
     }
 }

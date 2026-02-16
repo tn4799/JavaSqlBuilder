@@ -2,6 +2,7 @@ package sqlbuilder.expressions;
 
 import sqlbuilder.SelectBuilder;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Expression {
@@ -27,6 +28,30 @@ public class Expression {
 
     public static Operand param(String nameKey) {
         return new Operand.Parameter(nameKey);
+    }
+
+    public static Operand any(Object... values) {
+        return any(List.of(values));
+    }
+
+    public static Operand any(List<Object> values) {
+        return new AnyOperand(convertToOperandList(values));
+    }
+
+    public static Operand any(SelectBuilder subQuery) {
+        return new AnyOperand(subQuery);
+    }
+
+    public static Operand all(Object... values) {
+        return all(List.of(values));
+    }
+
+    public static Operand all(List<Object> values) {
+        return new AllOperand(convertToOperandList(values));
+    }
+
+    public static Operand all(SelectBuilder subQuery) {
+        return new AllOperand(subQuery);
     }
 
     public static Operand.CaseBuilder _case() {
@@ -135,5 +160,11 @@ public class Expression {
     private static Operand getCorrectOperand(Object comparisonValue) {
         return comparisonValue instanceof Operand ?
                 (Operand) comparisonValue : new ValueOperand(comparisonValue);
+    }
+
+    private static List<Operand> convertToOperandList(List<Object> values) {
+        return values.stream()
+                .map(val -> (Operand) new ValueOperand(val))
+                .toList();
     }
 }
