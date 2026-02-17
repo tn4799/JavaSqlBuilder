@@ -344,10 +344,7 @@ class BetweenCondition implements Condition {
     public String toSql() {
         return new StringJoiner(" ")
                 .add(column.toSql())
-                .add("BETWEEN")
-                .add(lowerBound.toSql())
-                .add("AND")
-                .add(upperBound.toSql())
+                .add("BETWEEN ? AND ?")
                 .toString();
     }
 
