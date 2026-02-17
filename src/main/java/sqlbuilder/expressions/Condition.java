@@ -1,6 +1,7 @@
 package sqlbuilder.expressions;
 
 import sqlbuilder.SelectBuilder;
+import sqlbuilder.dialects.SqlDialect;
 import sqlbuilder.exceptions.ValueCannotBeEmptyException;
 
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 public interface Condition {
-    public String toSql();
+    public String toSql(SqlDialect dialect);
     List<Object> getParameters();
 
     default ConditionChain and() {
@@ -126,13 +127,13 @@ public interface Condition {
         }
 
         @Override
-        public String toSql() {
+        public String toSql(SqlDialect dialect) {
             if(conditions.isEmpty()) {
                 return "";
             }
 
             return conditions.stream()
-                    .map(Condition::toSql)
+                    .map(condition -> condition.toSql(dialect))
                     .collect(Collectors.joining(" " + type + " "));
         }
 
@@ -157,11 +158,11 @@ class ComparisionCondition implements Condition {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         return new StringJoiner(" ")
-                .add(column.toSql())
+                .add(column.toSql(dialect))
                 .add(operator)
-                .add(comparisonValue.toSql())
+                .add("?")
                 .toString();
     }
 
@@ -182,7 +183,7 @@ class NullCondition implements Condition {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         return column + " IS NULL";
     }
 
@@ -199,7 +200,7 @@ class NotNullCondition extends NullCondition {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         return column + "IS NOT NULL";
     }
 }
@@ -212,8 +213,8 @@ class NotCondition implements Condition {
     }
 
     @Override
-    public String toSql() {
-        return "NOT " + condition.toSql();
+    public String toSql(SqlDialect dialect) {
+        return "NOT " + condition.toSql(dialect);
     }
 
     @Override
@@ -248,7 +249,7 @@ class InCondition implements Condition {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         StringJoiner sql = new StringJoiner(" ")
                 .add(column)
                 .add(operator)
@@ -308,7 +309,7 @@ class ExistsCondition implements Condition {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         StringJoiner exists = new StringJoiner(" ")
                 .add(operator)
                 .add("(")
@@ -341,9 +342,9 @@ class BetweenCondition implements Condition {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         return new StringJoiner(" ")
-                .add(column.toSql())
+                .add(column.toSql(dialect))
                 .add("BETWEEN ? AND ?")
                 .toString();
     }
@@ -369,7 +370,7 @@ class SimpleCondition implements Condition {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         return new StringJoiner(" ")
                 .add(column)
                 .add(comparisonOperator)

@@ -161,7 +161,7 @@ public class SelectBuilder {
                 .add(addSchemaToTable(table))
                 .add(alias)
                 .add("ON")
-                .add(joinCondition.toSql());
+                .add(joinCondition.toSql(dialect));
 
         joins.add(join.toString());
     }
@@ -265,7 +265,7 @@ public class SelectBuilder {
 
             Condition.CompositeCondition chainedConditions = new Condition.CompositeCondition("AND", conditions);
             parameters.addAll(chainedConditions.getParameters());
-            statement.add(chainedConditions.toSql());
+            statement.add(chainedConditions.toSql(dialect));
         }
 
         if(!groupColumns.isEmpty()) {
@@ -274,7 +274,7 @@ public class SelectBuilder {
         }
 
         if(havingCondition != null) {
-            statement.add("HAVING").add(havingCondition.toSql());
+            statement.add("HAVING").add(havingCondition.toSql(dialect));
             parameters.addAll(havingCondition.getParameters());
         }
 

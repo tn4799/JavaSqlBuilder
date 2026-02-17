@@ -1,13 +1,14 @@
 package sqlbuilder.expressions;
 
 import sqlbuilder.SelectBuilder;
+import sqlbuilder.dialects.SqlDialect;
 import sqlbuilder.exceptions.DuplicateKeyException;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public interface Operand {
-    public String toSql();
+    public String toSql(SqlDialect dialect);
     public void addParameters(List<Object> parameters);
 
     /**
@@ -36,7 +37,7 @@ public interface Operand {
         }
 
         @Override
-        public String toSql() {
+        public String toSql(SqlDialect dialect) {
             if(whenThenCases.isEmpty()) {
                 throw new IllegalStateException("At least one When-Then combination is needed.");
             }
@@ -44,12 +45,12 @@ public interface Operand {
             StringJoiner _case = new StringJoiner(" ")
                     .add("CASE");
             whenThenCases.forEach((condition, operand) -> _case.add("WHEN")
-                    .add(condition.toSql())
+                    .add(condition.toSql(dialect))
                     .add("THEN")
-                    .add(operand.toSql()));
+                    .add(operand.toSql(dialect)));
             if(_else != null) {
                 _case.add("ELSE")
-                        .add(_else.toSql());
+                        .add(_else.toSql(dialect));
             }
             _case.add("END");
             return _case.toString();
@@ -75,7 +76,7 @@ public interface Operand {
         }
 
         @Override
-        public String toSql() {
+        public String toSql(SqlDialect dialect) {
             return "( %s )".formatted(subQuery.build().getStatement());
         }
 
@@ -102,7 +103,7 @@ public interface Operand {
         }
 
         @Override
-        public String toSql() {
+        public String toSql(SqlDialect dialect) {
             return "?";
         }
 
@@ -145,9 +146,8 @@ public interface Operand {
                 return this.value;
             }
 
-            @Override
-            public String toString() {
-                return this.value.toSql();
+            public String toSqlValue(SqlDialect dialect) {
+                return this.value.toSql(dialect);
             }
         }
     }
@@ -161,7 +161,7 @@ class ValueOperand implements Operand {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         return "?";
     }
 
@@ -179,7 +179,7 @@ class ColumnOperand implements Operand {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         return columnName;
     }
 
@@ -209,7 +209,7 @@ class AnyAllOperand implements Operand {
     }
 
     @Override
-    public String toSql() {
+    public String toSql(SqlDialect dialect) {
         StringJoiner sql = new StringJoiner(" ")
                 .add(operand)
                 .add("(");

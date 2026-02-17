@@ -1,5 +1,6 @@
 package sqlbuilder;
 
+import sqlbuilder.dialects.SqlDialect;
 import sqlbuilder.expressions.Operand;
 
 import java.lang.reflect.Parameter;
@@ -50,18 +51,24 @@ public class Query {
         return statement;
     }
 
-    public String getPopulatedStatement() {
+    public String getPopulatedStatement(SqlDialect dialect) {
         StringBuffer populatedStatement = new StringBuffer();
         Matcher matcher = Pattern.compile("\\?").matcher(statement);
 
         for(Object param : parameters) {
-            if(param instanceof Operand.Parameter.Param && ((Operand.Parameter.Param) param).getValue() == null) {
-                // move the matcher forward to ignore prepared statement parameter
-                matcher.find();
-                continue;
+            String parameterValue;
+            if(param instanceof Operand.Parameter.Param parameter) {
+                if(parameter.getValue() == null) {
+                    // move the matcher forward to ignore prepared statement parameter
+                    matcher.find();
+                    continue;
+                }
+
+                parameterValue = parameter.toSqlValue(dialect);
+            } else {
+                parameterValue = param instanceof String ? "'%s'".formatted(param) : param.toString();
             }
-            String parameter = param instanceof String ? "'%s'".formatted(param) : param.toString();
-            replacePreparedParameter(matcher, populatedStatement, parameter);
+            replacePreparedParameter(matcher, populatedStatement, parameterValue);
         }
 
         matcher.appendTail(populatedStatement);
