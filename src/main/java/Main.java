@@ -31,6 +31,6 @@ public class Main {
                 .build();
 
         System.out.println("prepared statement: " + query.getStatement());
-        System.out.println("populated statement: " + query.getPopulatedStatement());
+        System.out.println("populated statement: " + query.getPopulatedStatement(dialect));
     }
 }
