@@ -25,13 +25,13 @@ public class SelectBuilder {
     private int offset = 0;
 
     public SelectBuilder(SqlDialect dialect) {
-        this(dialect, "");
+        this(dialect, null);
     }
 
     public SelectBuilder(SqlDialect dialect, String schema) {
         this.dialect = dialect;
-        if(schema == null) {
-            schema = "";
+        if(schema == null || schema.isEmpty()) {
+            schema = ".";
         }
         // Remove dot at the end if existing.
         // This is done because in addSchemaToTable the schema is added with a dot.
