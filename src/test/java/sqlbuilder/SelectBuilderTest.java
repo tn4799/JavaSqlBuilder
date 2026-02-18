@@ -2,6 +2,7 @@ package sqlbuilder;
 
 import org.junit.Test;
 import sqlbuilder.dialects.SqlDialect;
+import sqlbuilder.exceptions.ValueCannotBeEmptyException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -63,6 +64,23 @@ public class SelectBuilderTest {
     @Test
     public void testEmptyBuilder() {
         assertThrows(IllegalStateException.class, () -> new SelectBuilder(DIALECT).build());
+    }
+
+    @Test
+    public void testColumnWithAliasWithEmptyColumn() {
+        assertThrows(ValueCannotBeEmptyException.class, () -> new SelectBuilder(DIALECT)
+                .selectWithAlias("", "alias1").from(TABLE_A));
+    }
+
+    @Test
+    public void testEmptyFrom() {
+        assertThrows(ValueCannotBeEmptyException.class, () -> new SelectBuilder(DIALECT).from());
+    }
+
+    @Test
+    public void testEmptyTableName() {
+        assertThrows(ValueCannotBeEmptyException.class, () -> new SelectBuilder(DIALECT).from("  "));
+        assertThrows(ValueCannotBeEmptyException.class, () -> new SelectBuilder(DIALECT).from((String) null));
     }
 
     private static String getTableWithAlias(String value) {
