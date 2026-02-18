@@ -25,12 +25,23 @@ public class SelectBuilder {
     private int offset = 0;
 
     public SelectBuilder(SqlDialect dialect) {
-        this(dialect, null);
+        this(dialect, "");
     }
 
     public SelectBuilder(SqlDialect dialect, String schema) {
         this.dialect = dialect;
+        if(schema == null) {
+            schema = "";
+        }
+        // Remove dot at the end if existing.
+        // This is done because in addSchemaToTable the schema is added with a dot.
+        // Without this removal that would lead to a double dot which is invalid syntax
+        int lastIdx = schema.length() - 1;
+        if(schema.charAt(lastIdx) == '.') {
+            schema = schema.substring(0, lastIdx);
+        }
         this.schema = schema;
+
     }
 
     public SelectBuilder select(String... columns) {
