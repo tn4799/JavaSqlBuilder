@@ -39,22 +39,22 @@ public class SelectBuilder {
         }
 
         Arrays.stream(columns)
-                .map(column -> addAliasToColumn(dialect.quote(column), column))
+                .map(column -> addAliasToColumn(column, column))
                 .forEach(this.columns::add);
         return this;
     }
 
     public SelectBuilder select(String column) {
-        select(column, column);
+        selectWithAlias(column, column);
         return this;
     }
 
-    public SelectBuilder select(String column, String alias) {
+    public SelectBuilder selectWithAlias(String column, String alias) {
         if(column == null || column.isBlank()) {
             throw new ValueCannotBeEmptyException("column");
         }
 
-        column = addAliasToColumn(dialect.quote(column), alias);
+        column = addAliasToColumn(column, alias);
 
         this.columns.add(column);
         return this;
@@ -73,7 +73,7 @@ public class SelectBuilder {
     }
 
     public SelectBuilder selectDistinct(String column, String alias) {
-        select(column, alias);
+        selectWithAlias(column, alias);
         distinct = true;
         return this;
     }
@@ -98,11 +98,11 @@ public class SelectBuilder {
             throw new ValueCannotBeEmptyException("table");
         }
 
-        from(table, table);
+        fromWithAlias(table, table);
         return this;
     }
 
-    public SelectBuilder from(String table, String alias) {
+    public SelectBuilder fromWithAlias(String table, String alias) {
         if(alias == null || alias.isBlank()) {
             return from(table);
         }
