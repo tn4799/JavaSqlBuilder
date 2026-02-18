@@ -34,10 +34,6 @@ public class SelectBuilder {
     }
 
     public SelectBuilder select(String... columns) {
-        if(columns == null || columns.length == 0) {
-            throw new ValueCannotBeEmptyException("columns");
-        }
-
         Arrays.stream(columns)
                 .map(column -> addAliasToColumn(column, column))
                 .forEach(this.columns::add);
@@ -45,6 +41,10 @@ public class SelectBuilder {
     }
 
     public SelectBuilder select(String column) {
+        if(column == null || column.isBlank()) {
+            return this;
+        }
+
         selectWithAlias(column, column);
         return this;
     }
@@ -302,11 +302,7 @@ public class SelectBuilder {
     }
 
     private static String addAliasToColumn(String column, String alias) {
-        if(column.contains(".")){
-            column = column + " AS " + quoteAlias(alias);
-        }
-
-        return column;
+        return column + " AS " + quoteAlias(alias);
     }
 
     private static String quoteAlias(String alias) {
