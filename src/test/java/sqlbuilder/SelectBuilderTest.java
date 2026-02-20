@@ -203,13 +203,30 @@ public class SelectBuilderTest {
         String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A + " LIKE ";
         String comparisonValue = "abc%";
         String expectedPopulated = stmt + "'" + comparisonValue + "'";
-        String expectedPrepared = stmt + " ?";
+        String expectedPrepared = stmt + "?";
 
         Query query = new SelectBuilder(DIALECT)
                 .select()
                 .from(TABLE_A)
                 .where(like(COLUMN_A, comparisonValue))
                 .build();
+
+        assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
+        assertEquals(expectedPrepared, query.getStatement());
+    }
+
+    @Test
+    public void testLikeColumn() {
+        String expected = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A + " LIKE " + COLUMN_B;
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(like(COLUMN_A, column(COLUMN_B)))
+                .build();
+
+        assertEquals(expected, query.getPopulatedStatement(DIALECT));
+        assertEquals(expected, query.getStatement());
     }
 
     private static String getTableWithAlias(String table) {
