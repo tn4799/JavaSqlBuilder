@@ -3,6 +3,7 @@ package sqlbuilder;
 import org.junit.Test;
 import sqlbuilder.dialects.SqlDialect;
 import sqlbuilder.exceptions.ValueCannotBeEmptyException;
+import sqlbuilder.expressions.Expression;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -83,8 +84,24 @@ public class SelectBuilderTest {
         assertThrows(ValueCannotBeEmptyException.class, () -> new SelectBuilder(DIALECT).from((String) null));
     }
 
-    private static String getTableWithAlias(String value) {
-        return value + " " + value;
+    @Test
+    public void testSelectFromWhereColumnEqualsStringValue() {
+        String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A;
+        String expectedPopulated = stmt + " = 'A'";
+        String expectedPrepared = stmt + " = ?";
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(Expression.eq(COLUMN_A, "A"))
+                .build();
+        
+        assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
+        assertEquals(expectedPrepared, query.getStatement());
+    }
+
+    private static String getTableWithAlias(String table) {
+        return table + " " + table;
     }
 
     private static String getColumnWithAlias(String column) {
