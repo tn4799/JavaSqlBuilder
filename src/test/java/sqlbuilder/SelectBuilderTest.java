@@ -229,6 +229,24 @@ public class SelectBuilderTest {
         assertEquals(expected, query.getStatement());
     }
 
+    @Test
+    public void testLikeValueWithEscapeChar() {
+        String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A + " LIKE ";
+        String comparisonValue = "abc!%";
+        char escape = '!';
+        String expectedPopulated = stmt + "'" + comparisonValue + "' ESCAPE " + escape;
+        String expectedPrepared = stmt + "? ESCAPE " + escape;
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(like(COLUMN_A, comparisonValue, escape))
+                .build();
+
+        assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
+        assertEquals(expectedPrepared, query.getStatement());
+    }
+
     private static String getTableWithAlias(String table) {
         return table + " " + table;
     }
