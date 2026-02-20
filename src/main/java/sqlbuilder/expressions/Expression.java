@@ -97,7 +97,13 @@ public class Expression {
     public static Condition like(String column, Object comparisonValue) {
         Operand left = new ColumnOperand(column);
         Operand right = getCorrectOperand(comparisonValue);
-        return new ComparisionCondition(left, "LIKE", right);
+        return new LikeCondition(left, right);
+    }
+
+    public static Condition like(String column, Object comparisonValue, char escapeChar) {
+        Operand left = new ColumnOperand(column);
+        Operand right = getCorrectOperand(comparisonValue);
+        return new LikeCondition(left, right, escapeChar);
     }
 
     public static Condition isNull(String column) {
