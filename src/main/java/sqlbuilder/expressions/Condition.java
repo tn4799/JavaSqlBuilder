@@ -162,7 +162,7 @@ class ComparisionCondition implements Condition {
         return new StringJoiner(" ")
                 .add(column.toSql(dialect))
                 .add(operator)
-                .add("?")
+                .add(comparisonValue instanceof ValueOperand ? "?" : comparisonValue.toSql(dialect))
                 .toString();
     }
 
