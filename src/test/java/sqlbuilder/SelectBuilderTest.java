@@ -7,10 +7,12 @@ import sqlbuilder.expressions.Expression;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static sqlbuilder.expressions.Expression.*;
 
 public class SelectBuilderTest {
     public static final String COLUMN_A = "columnA";
     public static final String COLUMN_B = "columnB";
+    public static final String COLUMN_C = "columnB";
     public static final SqlDialect DIALECT = new SqlDialect.OracleDialect();
     private static final String TABLE_A = "TABLE_A";
 
@@ -93,7 +95,7 @@ public class SelectBuilderTest {
         Query query = new SelectBuilder(DIALECT)
                 .select()
                 .from(TABLE_A)
-                .where(Expression.eq(COLUMN_A, "A"))
+                .where(eq(COLUMN_A, "A"))
                 .build();
         
         assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
@@ -110,7 +112,7 @@ public class SelectBuilderTest {
         Query query = new SelectBuilder(DIALECT)
                 .select()
                 .from(TABLE_A)
-                .where(Expression.eq(COLUMN_A, value))
+                .where(eq(COLUMN_A, value))
                 .build();
 
         assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
@@ -126,7 +128,24 @@ public class SelectBuilderTest {
         Query query = new SelectBuilder(DIALECT)
                 .select()
                 .from(TABLE_A)
-                .where(Expression.eq(COLUMN_A, Expression.column(COLUMN_B)))
+                .where(eq(COLUMN_A, column(COLUMN_B)))
+                .build();
+
+        assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
+        assertEquals(expectedPrepared, query.getStatement());
+    }
+
+    @Test
+    public void testConditionChaining() {
+        String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A;
+        int value = 50;
+        String expectedPopulated = stmt + " = " + COLUMN_B + " AND " + COLUMN_C + " = " + value;
+        String expectedPrepared = stmt + " = " + COLUMN_B + " AND " + COLUMN_C + " = ?";
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(eq(COLUMN_A, column(COLUMN_B)).and().eq(COLUMN_C, value))
                 .build();
 
         assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
