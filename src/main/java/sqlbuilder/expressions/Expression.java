@@ -95,10 +95,6 @@ public class Expression {
     }
 
     public static Condition like(String column, Object comparisonValue) {
-        if(comparisonValue instanceof AnyAllOperand anyAll) {
-            throw new IllegalStateException("%s is not allowed in LIKE as a parameter.".formatted(anyAll.getOperand()));
-        }
-
         Operand left = new ColumnOperand(column);
         Operand right = getCorrectOperand(comparisonValue);
         return new ComparisionCondition(left, "LIKE", right);
