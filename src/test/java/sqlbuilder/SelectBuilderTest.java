@@ -100,6 +100,23 @@ public class SelectBuilderTest {
         assertEquals(expectedPrepared, query.getStatement());
     }
 
+    @Test
+    public void testSelectFromWhereColumnEqualsNumberValue() {
+        String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A;
+        int value = 42;
+        String expectedPopulated = stmt + " = " + value;
+        String expectedPrepared = stmt + " = ?";
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(Expression.eq(COLUMN_A, value))
+                .build();
+
+        assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
+        assertEquals(expectedPrepared, query.getStatement());
+    }
+
     private static String getTableWithAlias(String table) {
         return table + " " + table;
     }
