@@ -152,6 +152,24 @@ public class SelectBuilderTest {
         assertEquals(expectedPrepared, query.getStatement());
     }
 
+    @Test
+    public void testConditionChainingThroughMultipleWhereCalls() {
+        String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A;
+        int value = 50;
+        String expectedPopulated = stmt + " = " + COLUMN_B + " AND " + COLUMN_C + " = " + value;
+        String expectedPrepared = stmt + " = " + COLUMN_B + " AND " + COLUMN_C + " = ?";
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(eq(COLUMN_A, column(COLUMN_B)))
+                .where(eq(COLUMN_C, value))
+                .build();
+
+        assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
+        assertEquals(expectedPrepared, query.getStatement());
+    }
+
     private static String getTableWithAlias(String table) {
         return table + " " + table;
     }
