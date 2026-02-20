@@ -198,6 +198,20 @@ public class SelectBuilderTest {
         assertEquals(expected, query.getStatement());
     }
 
+    @Test
+    public void testLikeValue() {
+        String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A + " LIKE ";
+        String comparisonValue = "abc%";
+        String expectedPopulated = stmt + comparisonValue;
+        String expectedPrepared = stmt + " ?";
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(like(COLUMN_A, comparisonValue))
+                .build();
+    }
+
     private static String getTableWithAlias(String table) {
         return table + " " + table;
     }
