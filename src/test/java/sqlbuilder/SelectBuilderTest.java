@@ -170,6 +170,34 @@ public class SelectBuilderTest {
         assertEquals(expectedPrepared, query.getStatement());
     }
 
+    @Test
+    public void testColumnIsNull() {
+        String expected = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A + " IS NULL";
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(isNull(COLUMN_A))
+                .build();
+
+        assertEquals(expected, query.getPopulatedStatement(DIALECT));
+        assertEquals(expected, query.getStatement());
+    }
+
+    @Test
+    public void testColumnIsNotNull() {
+        String expected = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A + " IS NOT NULL";
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(isNotNull(COLUMN_A))
+                .build();
+
+        assertEquals(expected, query.getPopulatedStatement(DIALECT));
+        assertEquals(expected, query.getStatement());
+    }
+
     private static String getTableWithAlias(String table) {
         return table + " " + table;
     }
