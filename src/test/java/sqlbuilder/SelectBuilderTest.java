@@ -117,6 +117,22 @@ public class SelectBuilderTest {
         assertEquals(expectedPrepared, query.getStatement());
     }
 
+    @Test
+    public void testSelectFromWhereColumnEqualsColumnValue() {
+        String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A;
+        String expectedPopulated = stmt + " = " + COLUMN_B;
+        String expectedPrepared = stmt + " = " + COLUMN_B;
+
+        Query query = new SelectBuilder(DIALECT)
+                .select()
+                .from(TABLE_A)
+                .where(Expression.eq(COLUMN_A, Expression.column(COLUMN_B)))
+                .build();
+
+        assertEquals(expectedPopulated, query.getPopulatedStatement(DIALECT));
+        assertEquals(expectedPrepared, query.getStatement());
+    }
+
     private static String getTableWithAlias(String table) {
         return table + " " + table;
     }
