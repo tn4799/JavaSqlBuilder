@@ -202,7 +202,7 @@ public class SelectBuilderTest {
     public void testLikeValue() {
         String stmt = "SELECT * FROM " + getTableWithAlias(TABLE_A) + " WHERE " + COLUMN_A + " LIKE ";
         String comparisonValue = "abc%";
-        String expectedPopulated = stmt + comparisonValue;
+        String expectedPopulated = stmt + "'" + comparisonValue + "'";
         String expectedPrepared = stmt + " ?";
 
         Query query = new SelectBuilder(DIALECT)
