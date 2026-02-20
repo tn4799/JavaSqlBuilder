@@ -201,7 +201,7 @@ class NotNullCondition extends NullCondition {
 
     @Override
     public String toSql(SqlDialect dialect) {
-        return column + "IS NOT NULL";
+        return column + " IS NOT NULL";
     }
 }
 
