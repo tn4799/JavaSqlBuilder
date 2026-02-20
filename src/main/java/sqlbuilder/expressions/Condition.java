@@ -175,6 +175,50 @@ class ComparisionCondition implements Condition {
     }
 }
 
+class LikeCondition implements Condition {
+    private final Operand column;
+    private static final String operator = "LIKE";
+    private final Operand pattern;
+    private final String escapeChar;
+
+    public LikeCondition(Operand column, Operand pattern) {
+        this.column = column;
+        this.pattern = pattern;
+        this.escapeChar = null;
+    }
+
+    public LikeCondition(Operand column, Operand pattern, char escapeChar) {
+        this.column = column;
+        this.pattern = pattern;
+        String escape = String.valueOf(escapeChar);
+
+        if(escape.isBlank()) {
+            escape = null;
+        }
+        this.escapeChar = escape;
+    }
+
+    @Override
+    public String toSql(SqlDialect dialect) {
+        StringJoiner statement = new StringJoiner(" ")
+                .add(column.toSql(dialect))
+                .add(operator)
+                .add(pattern instanceof ValueOperand ? "?" : pattern.toSql(dialect));
+        if(this.escapeChar != null) {
+            statement.add("ESCAPE").add(this.escapeChar);
+        }
+        return statement.toString();
+    }
+
+    @Override
+    public List<Object> getParameters() {
+        List<Object> params = new ArrayList<>();
+        column.addParameters(params);
+        pattern.addParameters(params);
+        return params;
+    }
+}
+
 class NullCondition implements Condition {
     protected final String column;
 
